@@ -152,14 +152,21 @@
 
     @media (max-width: 640px) {
       .settings-layout { grid-template-columns: 1fr; }
-      .settings-sidebar { position: static; }
+      .settings-sidebar { position: static; display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0.5rem; }
+      .sidebar-item { width: auto; flex: 1; text-align: center; font-size: 0.8rem; padding: 0.5rem 0.6rem; }
+      .sidebar-divider { display: none; }
+      .main-nav > div:first-child > div { display: none; } /* hide nav links */
+      .section-card-body { padding: 1rem; }
+      .avatar-section { flex-direction: column; align-items: flex-start; gap: 1rem; }
+      .info-row { flex-direction: column; align-items: flex-start; gap: 0.3rem; }
+      .info-row .info-value { word-break: break-all; font-size: 0.82rem; }
     }
   </style>
 </head>
 <body>
 
 <!-- ניווט -->
-<nav style="background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100">
+<nav class="main-nav" style="background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100">
   <div style="display:flex;align-items:center;gap:2rem">
     <a href="/" style="text-decoration:none;font-size:1.2rem;font-weight:700;color:var(--text);display:flex;align-items:center;gap:0.5rem">
       <span style="width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent);display:inline-block"></span>
