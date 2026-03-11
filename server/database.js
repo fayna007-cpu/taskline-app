@@ -7,7 +7,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, '../database/taskline.db');
+const DB_DIR = path.join(__dirname, '../database');
+const DB_PATH = path.join(DB_DIR, 'taskline.db');
+
+// Ensure database directory exists
+if (!fs.existsSync(DB_DIR)) {
+  fs.mkdirSync(DB_DIR, { recursive: true });
+}
 
 let sqlDb = null;
 
