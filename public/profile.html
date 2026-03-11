@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>הגדרות חשבון – TaskLine</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    .settings-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 1.5rem;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    .settings-sidebar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.5rem;
+      height: fit-content;
+      position: sticky;
+      top: 76px;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.65rem 0.9rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: right;
+      font-family: inherit;
+    }
+    .sidebar-item:hover { color: var(--text); background: var(--surface2); }
+    .sidebar-item.active { color: var(--text); background: var(--surface2); font-weight: 600; }
+    .sidebar-item.danger { color: var(--red); }
+    .sidebar-item.danger:hover { background: var(--red-bg); }
+
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0.4rem 0.5rem;
+    }
+
+    .settings-panel { display: none; }
+    .settings-panel.active { display: block; }
+
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    .section-card-header {
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .section-card-body {
+      padding: 1.5rem;
+    }
+
+    .avatar-section {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .big-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 800;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .avatar-info h2 { font-size: 1.2rem; font-weight: 700; }
+    .avatar-info p { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+    .role-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--accent-glow);
+      border: 1px solid rgba(124,106,247,0.3);
+      border-radius: 999px;
+      padding: 0.2rem 0.7rem;
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin-top: 0.4rem;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--text-muted); }
+    .info-value { font-weight: 500; }
+
+    .danger-zone {
+      background: var(--red-bg);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+
+    .danger-zone h3 { color: var(--red); font-size: 0.95rem; margin-bottom: 0.4rem; }
+    .danger-zone p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem; }
+
+    .delete-confirm {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .settings-layout { grid-template-columns: 1fr; }
+      .settings-sidebar { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ניווט -->
+<nav style="background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100">
+  <div style="display:flex;align-items:center;gap:2rem">
+    <a href="/" style="text-decoration:none;font-size:1.2rem;font-weight:700;color:var(--text);display:flex;align-items:center;gap:0.5rem">
+      <span style="width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent);display:inline-block"></span>
+      TaskLine
+    </a>
+    <div style="display:flex;gap:0.25rem">
+      <a href="/" style="padding:0.4rem 0.9rem;border-radius:6px;font-size:0.88rem;color:var(--text-muted);text-decoration:none">🏠 ראשי</a>
+      <a href="/profile.html" style="padding:0.4rem 0.9rem;border-radius:6px;font-size:0.88rem;color:var(--text);background:var(--surface2);text-decoration:none">👤 הגדרות</a>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:0.75rem">
+    <div id="navUser" style="font-size:0.85rem;color:var(--text-muted)"></div>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">יציאה</button>
+  </div>
+</nav>
+
+<div class="page-wrapper" style="padding-top:2rem">
+
+  <div style="margin-bottom:1.5rem">
+    <h1 style="font-size:1.5rem;font-weight:800">הגדרות חשבון</h1>
+    <p style="color:var(--text-muted);font-size:0.9rem;margin-top:0.2rem">נהלו את פרטי החשבון, הסיסמה וההגדרות שלכם</p>
+  </div>
+
+  <div class="settings-layout">
+
+    <!-- סרגל צד -->
+    <div class="settings-sidebar">
+      <button class="sidebar-item active" onclick="showPanel('profile')">👤 פרופיל</button>
+      <button class="sidebar-item" onclick="showPanel('security')">🔒 סיסמה ואבטחה</button>
+      <div class="sidebar-divider"></div>
+      <button class="sidebar-item danger" onclick="showPanel('danger')">🗑️ מחיקת חשבון</button>
+    </div>
+
+    <!-- תוכן -->
+    <div>
+
+      <!-- פאנל: פרופיל -->
+      <div class="settings-panel active" id="panel-profile">
+
+        <!-- סיכום חשבון -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-title">פרטי חשבון</span>
+          </div>
+          <div class="section-card-body">
+            <div class="avatar-section">
+              <div class="big-avatar" id="bigAvatar">?</div>
+              <div class="avatar-info">
+                <h2 id="profileName">–</h2>
+                <p id="profileEmail">–</p>
+                <div class="role-chip" id="profileRole">–</div>
+              </div>
+            </div>
+
+            <div class="info-row">
+              <span class="info-label">שם משתמש</span>
+              <span class="info-value" id="profileUsername">–</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">תאריך הצטרפות</span>
+              <span class="info-value" id="profileCreated">–</span>
+            </div>
+            <div class="info-row" id="queueLinkRow" style="display:none">
+              <span class="info-label">לינק התור שלך</span>
+              <span class="info-value" style="display:flex;gap:0.5rem;align-items:center">
+                <span id="profileQueueLink" style="font-family:monospace;font-size:0.82rem;color:var(--accent)"></span>
+                <button class="btn btn-ghost btn-sm" onclick="copyQueueLink()">העתק</button>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- עריכת פרטים -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-title">עריכת פרטים</span>
+          </div>
+          <div class="section-card-body">
+            <div id="profileAlertBox"></div>
+            <form id="profileForm">
+              <div class="form-group">
+                <label for="editName">שם מלא</label>
+                <input type="text" id="editName" required />
+              </div>
+              <div class="form-group">
+                <label for="editEmail">אימייל</label>
+                <input type="email" id="editEmail" required />
+              </div>
+              <div class="form-group" id="editServiceTypeGroup" style="display:none">
+                <label for="editServiceType">סוג השירות</label>
+                <select id="editServiceType">
+                  <option value="מעצב גרפי">🎨 מעצב גרפי</option>
+                  <option value="מעצב UX/UI">🖥️ מעצב UX/UI</option>
+                  <option value="מנהל פרויקטים">📊 מנהל פרויקטים</option>
+                  <option value="מנהל תוכן">✍️ מנהל תוכן</option>
+                  <option value="מפתח">💻 מפתח</option>
+                  <option value="שיווק">📣 שיווק</option>
+                  <option value="כספים">💰 כספים</option>
+                  <option value="משאבי אנוש">👥 משאבי אנוש</option>
+                  <option value="תמיכה טכנית">🔧 תמיכה טכנית</option>
+                  <option value="אחר">⚡ אחר</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary" id="saveProfileBtn">שמור שינויים</button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- פאנל: סיסמה ואבטחה -->
+      <div class="settings-panel" id="panel-security">
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-title">שינוי סיסמה</span>
+          </div>
+          <div class="section-card-body">
+            <div id="passwordAlertBox"></div>
+            <form id="passwordForm">
+              <div class="form-group">
+                <label for="currentPassword">סיסמה נוכחית</label>
+                <input type="password" id="currentPassword" placeholder="••••••••" required />
+              </div>
+              <div class="form-group">
+                <label for="newPassword">סיסמה חדשה</label>
+                <input type="password" id="newPassword" placeholder="לפחות 6 תווים" required />
+              </div>
+              <div class="form-group">
+                <label for="confirmPassword">אימות סיסמה חדשה</label>
+                <input type="password" id="confirmPassword" placeholder="הקלד שוב את הסיסמה החדשה" required />
+              </div>
+              <button type="submit" class="btn btn-primary" id="savePasswordBtn">עדכן סיסמה</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- פאנל: מחיקת חשבון -->
+      <div class="settings-panel" id="panel-danger">
+        <div class="danger-zone">
+          <h3>⚠️ אזור מסוכן</h3>
+          <p>מחיקת החשבון היא פעולה בלתי הפיכה. כל הנתונים, הסלוטים והבקשות המקושרות אליך יימחקו לצמיתות.</p>
+
+          <div id="deleteToggle">
+            <button class="btn btn-danger" onclick="showDeleteConfirm()">אני רוצה למחוק את החשבון שלי</button>
+          </div>
+
+          <div class="delete-confirm" id="deleteConfirm" style="display:none">
+            <div style="font-size:0.9rem;font-weight:600;margin-bottom:1rem;color:var(--red)">
+              האם אתה בטוח לחלוטין? פעולה זו לא ניתנת לביטול.
+            </div>
+            <div id="deleteAlertBox"></div>
+            <div class="form-group">
+              <label>הזן את הסיסמה שלך לאישור</label>
+              <input type="password" id="deletePassword" placeholder="הסיסמה שלך" />
+            </div>
+            <div style="display:flex;gap:0.75rem;margin-top:1rem">
+              <button class="btn btn-danger" onclick="deleteAccount()">מחק חשבון לצמיתות</button>
+              <button class="btn btn-ghost" onclick="hideDeleteConfirm()">ביטול</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  let currentUser = null;
+
+  async function init() {
+    const res = await fetch('/api/auth/me');
+    const me = await res.json();
+
+    if (!me.loggedIn) { window.location.href = '/login.html'; return; }
+
+    const profileRes = await fetch('/api/profile');
+    currentUser = await profileRes.json();
+
+    // Fill nav
+    document.getElementById('navUser').textContent = `@${currentUser.username}`;
+
+    // Fill account summary
+    document.getElementById('bigAvatar').textContent = currentUser.name[0];
+    document.getElementById('profileName').textContent = currentUser.name;
+    document.getElementById('profileEmail').textContent = currentUser.email;
+    document.getElementById('profileUsername').textContent = `@${currentUser.username}`;
+    document.getElementById('profileCreated').textContent = formatDate(currentUser.created_at);
+
+    const roleLabel = currentUser.role === 'provider'
+      ? `🛠️ נותן שירות · ${currentUser.service_type || 'אחר'}`
+      : '📋 מבקש שירות';
+    document.getElementById('profileRole').textContent = roleLabel;
+
+    if (currentUser.role === 'provider') {
+      document.getElementById('queueLinkRow').style.display = 'flex';
+      const queueUrl = `${window.location.origin}/queue.html?provider=${currentUser.username}`;
+      document.getElementById('profileQueueLink').textContent = queueUrl;
+      document.getElementById('editServiceTypeGroup').style.display = 'block';
+    }
+
+    // Fill edit form
+    document.getElementById('editName').value = currentUser.name;
+    document.getElementById('editEmail').value = currentUser.email;
+
+    if (currentUser.role === 'provider') {
+      const sel = document.getElementById('editServiceType');
+      for (let opt of sel.options) {
+        if (opt.value === currentUser.service_type) { opt.selected = true; break; }
+      }
+    }
+  }
+
+  // ── Panels ──────────────────────────────────────────────────────────────
+  function showPanel(name) {
+    document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+    document.getElementById(`panel-${name}`).classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+
+  // ── Update Profile ───────────────────────────────────────────────────────
+  document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('saveProfileBtn');
+    const alertBox = document.getElementById('profileAlertBox');
+    alertBox.innerHTML = '';
+    btn.disabled = true;
+    btn.textContent = 'שומר...';
+
+    const body = {
+      name: document.getElementById('editName').value.trim(),
+      email: document.getElementById('editEmail').value.trim(),
+      service_type: currentUser.role === 'provider'
+        ? document.getElementById('editServiceType').value
+        : 'אחר'
+    };
+
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alertBox.innerHTML = `<div class="alert alert-error">${data.error}</div>`;
+      } else {
+        toast('הפרטים עודכנו בהצלחה!', 'success');
+        // Update displayed values
+        document.getElementById('profileName').textContent = body.name;
+        document.getElementById('profileEmail').textContent = body.email;
+        document.getElementById('bigAvatar').textContent = body.name[0];
+        document.getElementById('profileRole').textContent =
+          currentUser.role === 'provider'
+            ? `🛠️ נותן שירות · ${body.service_type}`
+            : '📋 מבקש שירות';
+        currentUser.name = body.name;
+        currentUser.service_type = body.service_type;
+      }
+    } catch {
+      alertBox.innerHTML = '<div class="alert alert-error">שגיאת רשת. נסה שוב.</div>';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'שמור שינויים';
+  });
+
+  // ── Change Password ──────────────────────────────────────────────────────
+  document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('savePasswordBtn');
+    const alertBox = document.getElementById('passwordAlertBox');
+    alertBox.innerHTML = '';
+
+    const newPwd = document.getElementById('newPassword').value;
+    const confirmPwd = document.getElementById('confirmPassword').value;
+
+    if (newPwd !== confirmPwd) {
+      alertBox.innerHTML = '<div class="alert alert-error">הסיסמאות החדשות אינן תואמות</div>';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'מעדכן...';
+
+    try {
+      const res = await fetch('/api/profile/password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: document.getElementById('currentPassword').value,
+          newPassword: newPwd
+        })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alertBox.innerHTML = `<div class="alert alert-error">${data.error}</div>`;
+      } else {
+        toast('הסיסמה עודכנה בהצלחה!', 'success');
+        document.getElementById('passwordForm').reset();
+      }
+    } catch {
+      alertBox.innerHTML = '<div class="alert alert-error">שגיאת רשת. נסה שוב.</div>';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'עדכן סיסמה';
+  });
+
+  // ── Delete Account ───────────────────────────────────────────────────────
+  function showDeleteConfirm() {
+    document.getElementById('deleteToggle').style.display = 'none';
+    document.getElementById('deleteConfirm').style.display = 'block';
+  }
+
+  function hideDeleteConfirm() {
+    document.getElementById('deleteToggle').style.display = 'block';
+    document.getElementById('deleteConfirm').style.display = 'none';
+    document.getElementById('deletePassword').value = '';
+    document.getElementById('deleteAlertBox').innerHTML = '';
+  }
+
+  async function deleteAccount() {
+    const password = document.getElementById('deletePassword').value;
+    const alertBox = document.getElementById('deleteAlertBox');
+    alertBox.innerHTML = '';
+
+    if (!password) {
+      alertBox.innerHTML = '<div class="alert alert-error">הזן את הסיסמה שלך</div>';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alertBox.innerHTML = `<div class="alert alert-error">${data.error}</div>`;
+        return;
+      }
+
+      toast('החשבון נמחק. להתראות!', 'success');
+      setTimeout(() => window.location.href = '/', 1500);
+    } catch {
+      alertBox.innerHTML = '<div class="alert alert-error">שגיאת רשת. נסה שוב.</div>';
+    }
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  function copyQueueLink() {
+    const url = `${window.location.origin}/queue.html?provider=${currentUser.username}`;
+    navigator.clipboard.writeText(url).then(() => toast('לינק הועתק!', 'success'));
+  }
+
+  function formatDate(str) {
+    if (!str) return '–';
+    return new Date(str).toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  function toast(msg, type = 'success') {
+    const c = document.getElementById('toastContainer');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    c.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/';
+  }
+
+  init();
+</script>
+
+</body>
+</html>

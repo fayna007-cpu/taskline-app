@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>הרשמה – TaskLine</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body class="auth-page">
+
+<div class="auth-card">
+  <div class="auth-logo">
+    <a href="/" style="text-decoration:none; color:inherit">
+      <h1>TaskLine</h1>
+    </a>
+    <p class="tagline">יצירת חשבון חדש</p>
+  </div>
+
+  <!-- בחירת תפקיד -->
+  <div class="role-selector">
+    <div class="role-option selected" data-role="provider" onclick="selectRole('provider')">
+      <div class="role-icon">🛠️</div>
+      <div class="role-name">נותן שירות</div>
+      <div class="role-desc">אני מספק שירות לאחרים</div>
+    </div>
+    <div class="role-option" data-role="requester" onclick="selectRole('requester')">
+      <div class="role-icon">📋</div>
+      <div class="role-name">מבקש שירות</div>
+      <div class="role-desc">אני צריך עזרה מאחרים</div>
+    </div>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <form id="registerForm">
+    <input type="hidden" id="roleInput" value="provider" />
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="name">שם מלא</label>
+        <input type="text" id="name" placeholder="דנה כהן" required />
+      </div>
+      <div class="form-group">
+        <label for="username">שם משתמש</label>
+        <input type="text" id="username" placeholder="dana" required />
+        <div class="form-hint" id="usernameHint">לינק התור: /queue/dana</div>
+      </div>
+    </div>
+
+    <!-- סוג שירות — מוצג רק לנותני שירות -->
+    <div class="form-group" id="serviceTypeGroup">
+      <label for="serviceType">סוג השירות שאתה נותן</label>
+      <select id="serviceType">
+        <option value="מעצב גרפי">🎨 מעצב גרפי</option>
+        <option value="מעצב UX/UI">🖥️ מעצב UX/UI</option>
+        <option value="מנהל פרויקטים">📊 מנהל פרויקטים</option>
+        <option value="מנהל תוכן">✍️ מנהל תוכן</option>
+        <option value="מפתח">💻 מפתח</option>
+        <option value="שיווק">📣 שיווק</option>
+        <option value="כספים">💰 כספים</option>
+        <option value="משאבי אנוש">👥 משאבי אנוש</option>
+        <option value="תמיכה טכנית">🔧 תמיכה טכנית</option>
+        <option value="אחר">⚡ אחר</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="email">אימייל</label>
+      <input type="email" id="email" placeholder="dana@company.com" required />
+    </div>
+
+    <div class="form-group">
+      <label for="password">סיסמה</label>
+      <input type="password" id="password" placeholder="לפחות 6 תווים" required />
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-full btn-lg" id="submitBtn">
+      יצירת חשבון
+    </button>
+  </form>
+
+  <div class="auth-divider">או</div>
+  <p style="text-align:center; font-size:0.88rem; color:var(--text-muted)">
+    כבר יש לך חשבון? <a href="login.html">כניסה</a>
+  </p>
+</div>
+
+<script>
+  let selectedRole = 'provider';
+
+  function selectRole(role) {
+    selectedRole = role;
+    document.getElementById('roleInput').value = role;
+    document.querySelectorAll('.role-option').forEach(el => {
+      el.classList.toggle('selected', el.dataset.role === role);
+    });
+
+    const hint = document.getElementById('usernameHint');
+    const stGroup = document.getElementById('serviceTypeGroup');
+    const username = document.getElementById('username').value || 'you';
+
+    if (role === 'provider') {
+      hint.style.display = 'block';
+      hint.textContent = `לינק התור: /queue/${username}`;
+      stGroup.style.display = 'block';
+    } else {
+      hint.style.display = 'none';
+      stGroup.style.display = 'none';
+    }
+  }
+
+  document.getElementById('username').addEventListener('input', function() {
+    if (selectedRole === 'provider') {
+      document.getElementById('usernameHint').textContent = `לינק התור: /queue/${this.value || 'you'}`;
+    }
+  });
+
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const alertBox = document.getElementById('alertBox');
+    alertBox.innerHTML = '';
+    btn.disabled = true;
+    btn.textContent = 'יוצר חשבון...';
+
+    const body = {
+      name: document.getElementById('name').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      username: document.getElementById('username').value.trim().toLowerCase(),
+      password: document.getElementById('password').value,
+      role: selectedRole,
+      service_type: selectedRole === 'provider' ? document.getElementById('serviceType').value : 'אחר'
+    };
+
+    if (body.password.length < 6) {
+      alertBox.innerHTML = '<div class="alert alert-error">הסיסמה חייבת להכיל לפחות 6 תווים.</div>';
+      btn.disabled = false;
+      btn.textContent = 'יצירת חשבון';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alertBox.innerHTML = `<div class="alert alert-error">${data.error}</div>`;
+        btn.disabled = false;
+        btn.textContent = 'יצירת חשבון';
+        return;
+      }
+
+      window.location.href = '/';
+    } catch {
+      alertBox.innerHTML = '<div class="alert alert-error">משהו השתבש. נסה שוב.</div>';
+      btn.disabled = false;
+      btn.textContent = 'יצירת חשבון';
+    }
+  });
+</script>
+
+</body>
+</html>

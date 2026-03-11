@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>שליחת בקשה – TaskLine</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    .provider-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .provider-card {
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .provider-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .provider-card.selected { border-color: var(--accent); background: var(--accent-glow); }
+
+    .provider-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: white;
+      margin: 0 auto 0.6rem;
+    }
+    .provider-card-name { font-weight: 600; font-size: 0.95rem; }
+    .provider-card-type { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem; }
+    .provider-card-queue {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: var(--surface);
+      border-radius: 999px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    /* Slot Selection */
+    .slots-section {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.25rem;
+      margin-top: 1rem;
+    }
+    .slots-section-title { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
+    .slots-date-label { font-size: 0.88rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text); }
+
+    .slot-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.35rem 0.9rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin: 0.25rem;
+    }
+    .slot-pill:hover { border-color: var(--accent); color: var(--accent); }
+    .slot-pill.selected { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+    .no-slots { font-size: 0.88rem; color: var(--text-dim); padding: 0.5rem 0; }
+
+    /* Success */
+    .success-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+    .success-number {
+      font-size: 5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin: 0.5rem 0;
+    }
+    .token-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      margin: 1.5rem auto;
+      text-align: right;
+      max-width: 480px;
+    }
+    .gcal-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #4285f4;
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 0.65rem 1.4rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .gcal-btn:hover { background: #357ae8; transform: translateY(-1px); }
+
+    /* Steps */
+    .steps {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      font-size: 0.85rem;
+    }
+    .step { color: var(--text-dim); }
+    .step.active { color: var(--accent); font-weight: 600; }
+    .step.done { color: var(--green); }
+    .step-sep { color: var(--text-dim); }
+  </style>
+</head>
+<body>
+
+<!-- ניווט -->
+<nav class="main-nav" style="background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100">
+  <div style="display:flex;align-items:center;gap:2rem">
+    <a href="/" style="text-decoration:none;font-size:1.2rem;font-weight:700;color:var(--text);display:flex;align-items:center;gap:0.5rem">
+      <span style="width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent);display:inline-block"></span>
+      TaskLine
+    </a>
+    <div style="display:flex;gap:0.25rem">
+      <a href="/" style="padding:0.4rem 0.9rem;border-radius:6px;font-size:0.88rem;color:var(--text-muted);text-decoration:none">🏠 ראשי</a>
+      <a href="/guest.html" style="padding:0.4rem 0.9rem;border-radius:6px;font-size:0.88rem;color:var(--text);background:var(--surface2);text-decoration:none">📋 שלח בקשה</a>
+    </div>
+  </div>
+  <div id="navAccount" style="display:flex;align-items:center;gap:0.75rem"></div>
+</nav>
+
+<div class="page-wrapper" style="max-width:760px">
+
+  <!-- כותרת -->
+  <div style="margin-bottom:1.5rem">
+    <h1 style="font-size:1.75rem;font-weight:800;margin-bottom:0.4rem">שליחת בקשה</h1>
+    <p style="color:var(--text-muted)">בחרו נותן שירות, מלאו את הטופס וקבלו מספר בתור — ללא צורך בהרשמה.</p>
+  </div>
+
+  <!-- שלבים -->
+  <div class="steps">
+    <span class="step active" id="step1">1. בחר נותן שירות</span>
+    <span class="step-sep">›</span>
+    <span class="step" id="step2">2. פרטי הבקשה</span>
+    <span class="step-sep">›</span>
+    <span class="step" id="step3">3. אישור</span>
+  </div>
+
+  <!-- שלב 1: בחר נותן שירות -->
+  <div id="stepProviders">
+    <div class="section-title" style="margin-bottom:0.75rem">נותני שירות זמינים</div>
+    <div id="providerGrid">
+      <div class="empty-state"><div class="empty-icon">⏳</div><p>טוען...</p></div>
+    </div>
+  </div>
+
+  <!-- שלב 2: טופס -->
+  <div id="stepForm" style="display:none">
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem">
+      <button class="btn btn-ghost btn-sm" onclick="goBack()">← חזרה</button>
+      <div>
+        <strong id="selectedProviderName"></strong>
+        <span id="selectedProviderType" style="font-size:0.82rem;color:var(--text-muted);margin-right:0.5rem"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">פרטי הבקשה</span>
+      </div>
+
+      <div id="alertBox"></div>
+
+      <form id="requestForm">
+        <div class="form-group">
+          <label>השם שלך</label>
+          <input type="text" id="requesterName" placeholder="דנה כהן" required />
+        </div>
+
+        <div class="form-group">
+          <label>נושא הבקשה</label>
+          <input type="text" id="taskTitle" placeholder="לדוגמה: עיצוב באנר לדף הבית" required />
+        </div>
+
+        <div class="form-group">
+          <label>תיאור <span style="color:var(--text-dim)">(אופציונלי)</span></label>
+          <textarea id="taskDesc" rows="3" placeholder="תארו את הבקשה בפירוט..."></textarea>
+        </div>
+
+        <!-- סלוטים -->
+        <div class="slots-section">
+          <div class="slots-section-title">🗓️ בחירת זמן לפגישה (אופציונלי)</div>
+          <div id="slotsContainer">
+            <div class="no-slots">בודק זמינות...</div>
+          </div>
+          <input type="hidden" id="selectedSlotId" value="" />
+        </div>
+
+        <div style="margin-top:1.25rem">
+          <button type="submit" class="btn btn-primary btn-full btn-lg" id="submitBtn">
+            הצטרף לתור
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- שלב 3: הצלחה -->
+  <div id="stepSuccess" style="display:none">
+    <div class="success-card">
+      <div style="font-size:3rem">🎉</div>
+      <div style="font-size:1rem;color:var(--text-muted);margin-top:0.5rem">הבקשה התקבלה! המיקום שלך בתור</div>
+      <div class="success-number" id="successPosition">–</div>
+      <div style="color:var(--text-muted)" id="successBefore">–</div>
+
+      <div class="token-box">
+        <div style="font-size:0.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.4rem">לינק המעקב שלך</div>
+        <div style="font-family:monospace;font-size:0.82rem;color:var(--accent);word-break:break-all" id="tokenDisplay"></div>
+      </div>
+
+      <div id="calendarSection" style="display:none;margin-bottom:1.5rem">
+        <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.75rem">פגישה תוזמנה: <strong id="slotDetails"></strong></div>
+        <a href="#" id="gcalLink" class="gcal-btn" target="_blank">
+          📅 הוסף ליומן Google
+        </a>
+      </div>
+
+      <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:1.5rem">שמרו את הלינק כדי לעקוב אחרי הבקשה בכל עת.</p>
+
+      <div style="display:flex;flex-direction:column;gap:0.75rem;max-width:300px;margin:0 auto">
+        <a href="#" id="trackBtn" class="btn btn-primary btn-full">מעקב אחרי הבקשה ←</a>
+        <button onclick="copyTrackLink()" class="btn btn-ghost btn-full">העתק לינק מעקב</button>
+        <a href="guest.html" class="btn btn-ghost btn-full">שלח בקשה נוספת</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  let selectedProvider = null;
+  let selectedSlotId = null;
+  let trackUrl = null;
+
+  async function init() {
+    // Set nav
+    const meRes = await fetch('/api/auth/me');
+    const me = await meRes.json();
+    const navAccount = document.getElementById('navAccount');
+
+    if (me.loggedIn) {
+      const dashUrl = me.role === 'provider' ? '/provider-dashboard.html' : '/requester-dashboard.html';
+      navAccount.innerHTML = `
+        <a href="${dashUrl}" style="display:flex;align-items:center;gap:0.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.9rem;font-size:0.85rem;color:var(--text);text-decoration:none">
+          <div style="width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white">${me.name[0]}</div>
+          ${esc(me.name)}
+        </a>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">יציאה</button>
+      `;
+      document.getElementById('requesterName') && (document.getElementById('requesterName').value = me.name);
+    } else {
+      navAccount.innerHTML = `
+        <a href="login.html" class="btn btn-ghost btn-sm">כניסה</a>
+        <a href="register.html" class="btn btn-primary btn-sm">הרשמה</a>
+      `;
+    }
+
+    // Check if provider pre-selected via URL
+    const params = new URLSearchParams(window.location.search);
+    const preProvider = params.get('provider');
+
+    await loadProviders(preProvider);
+  }
+
+  async function loadProviders(autoSelect) {
+    try {
+      const res = await fetch('/api/providers');
+      const providers = await res.json();
+      renderProviders(providers, autoSelect);
+    } catch(e) {
+      document.getElementById('providerGrid').innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><p>שגיאה בטעינת נותני השירות</p></div>`;
+    }
+  }
+
+  function renderProviders(providers, autoSelect) {
+    const grid = document.getElementById('providerGrid');
+
+    if (!providers.length) {
+      grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>אין נותני שירות רשומים עדיין.</p></div>`;
+      return;
+    }
+
+    grid.innerHTML = `<div class="provider-grid">${providers.map(p => `
+      <div class="provider-card" id="pc-${p.id}" onclick="selectProvider(${p.id}, '${esc(p.name)}', '${esc(p.username)}', '${esc(p.service_type)}')">
+        <div class="provider-avatar">${p.name[0]}</div>
+        <div class="provider-card-name">${esc(p.name)}</div>
+        <div class="provider-card-type">${esc(p.service_type)}</div>
+        <div class="provider-card-queue">
+          <span style="width:6px;height:6px;background:${p.waitingCount > 0 ? 'var(--yellow)' : 'var(--green)'};border-radius:50%;display:inline-block"></span>
+          ${p.waitingCount === 0 ? 'ריק' : p.waitingCount + ' ממתינים'}
+        </div>
+      </div>`).join('')}
+    </div>`;
+
+    if (autoSelect) {
+      const found = providers.find(p => p.username === autoSelect);
+      if (found) selectProvider(found.id, found.name, found.username, found.service_type);
+    }
+  }
+
+  async function selectProvider(id, name, username, serviceType) {
+    selectedProvider = { id, name, username, serviceType };
+
+    // Update steps
+    document.getElementById('step1').className = 'step done';
+    document.getElementById('step2').className = 'step active';
+
+    document.getElementById('selectedProviderName').textContent = name;
+    document.getElementById('selectedProviderType').textContent = serviceType;
+
+    document.getElementById('stepProviders').style.display = 'none';
+    document.getElementById('stepForm').style.display = 'block';
+
+    // Load slots
+    await loadSlots(username);
+  }
+
+  async function loadSlots(username) {
+    const container = document.getElementById('slotsContainer');
+    container.innerHTML = '<div class="no-slots">בודק זמינות...</div>';
+
+    try {
+      const res = await fetch(`/api/slots/${username}`);
+      const slots = await res.json();
+
+      if (!slots.length) {
+        container.innerHTML = '<div class="no-slots">אין סלוטים זמינים לתיאום — הבקשה תיכנס לתור הרגיל.</div>';
+        return;
+      }
+
+      // Group by date
+      const byDate = {};
+      slots.forEach(s => { if (!byDate[s.date]) byDate[s.date] = []; byDate[s.date].push(s); });
+
+      let html = '';
+      Object.entries(byDate).sort().forEach(([date, daySlots]) => {
+        const d = new Date(date + 'T12:00:00');
+        const label = d.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+        html += `<div style="margin-bottom:0.75rem"><div class="slots-date-label">${label}</div>`;
+        daySlots.forEach(s => {
+          html += `<span class="slot-pill" data-id="${s.id}" data-date="${s.date}" data-time="${s.time}" data-duration="${s.duration}" onclick="selectSlot(this)">🕐 ${s.time} (${s.duration} דק')</span>`;
+        });
+        html += '</div>';
+      });
+
+      html += `<div style="margin-top:0.5rem"><span class="slot-pill" data-id="" onclick="clearSlot(this)">ללא תיאום זמן</span></div>`;
+      container.innerHTML = html;
+
+    } catch(e) {
+      container.innerHTML = '<div class="no-slots">שגיאה בטעינת סלוטים.</div>';
+    }
+  }
+
+  function selectSlot(el) {
+    document.querySelectorAll('.slot-pill').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedSlotId = el.dataset.id || null;
+    document.getElementById('selectedSlotId').value = selectedSlotId || '';
+  }
+
+  function clearSlot(el) {
+    document.querySelectorAll('.slot-pill').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedSlotId = null;
+  }
+
+  function goBack() {
+    document.getElementById('stepForm').style.display = 'none';
+    document.getElementById('stepProviders').style.display = 'block';
+    document.getElementById('step1').className = 'step active';
+    document.getElementById('step2').className = 'step';
+    selectedProvider = null;
+    selectedSlotId = null;
+  }
+
+  document.getElementById('requestForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const alertBox = document.getElementById('alertBox');
+    alertBox.innerHTML = '';
+    btn.disabled = true;
+    btn.textContent = 'מצטרף לתור...';
+
+    try {
+      const body = {
+        requester_name: document.getElementById('requesterName').value.trim(),
+        title: document.getElementById('taskTitle').value.trim(),
+        description: document.getElementById('taskDesc').value.trim()
+      };
+      if (selectedSlotId) body.slot_id = parseInt(selectedSlotId);
+
+      const res = await fetch(`/api/queue/${selectedProvider.username}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alertBox.innerHTML = `<div class="alert alert-error">${data.error}</div>`;
+        btn.disabled = false;
+        btn.textContent = 'הצטרף לתור';
+        return;
+      }
+
+      // Show success
+      trackUrl = window.location.origin + data.trackUrl;
+      const peopleBefore = data.position - 1;
+
+      document.getElementById('successPosition').textContent = `#${data.position}`;
+      document.getElementById('successBefore').textContent =
+        peopleBefore === 0 ? 'אתה הבא בתור!' :
+        peopleBefore === 1 ? 'אדם אחד לפניך' : `${peopleBefore} אנשים לפניך`;
+      document.getElementById('tokenDisplay').textContent = trackUrl;
+      document.getElementById('trackBtn').href = data.trackUrl;
+
+      // Calendar integration
+      if (data.slotInfo) {
+        const slot = data.slotInfo;
+        document.getElementById('calendarSection').style.display = 'block';
+        document.getElementById('slotDetails').textContent = `${formatDateHe(slot.date)} בשעה ${slot.time} (${slot.duration} דקות)`;
+
+        const startDt = slot.date.replace(/-/g, '') + 'T' + slot.time.replace(':', '') + '00';
+        const endMin = addMinutes(slot.time, slot.duration);
+        const endDt = slot.date.replace(/-/g, '') + 'T' + endMin.replace(':', '') + '00';
+        const gcalUrl = `https://www.google.com/calendar/render?action=TEMPLATE` +
+          `&text=${encodeURIComponent('פגישה עם ' + selectedProvider.name + ' – TaskLine')}` +
+          `&dates=${startDt}/${endDt}` +
+          `&details=${encodeURIComponent(body.title + '\n\nמעקב: ' + trackUrl)}`;
+        document.getElementById('gcalLink').href = gcalUrl;
+      }
+
+      // Step 3
+      document.getElementById('step2').className = 'step done';
+      document.getElementById('step3').className = 'step active';
+      document.getElementById('stepForm').style.display = 'none';
+      document.getElementById('stepSuccess').style.display = 'block';
+
+    } catch {
+      alertBox.innerHTML = '<div class="alert alert-error">משהו השתבש. נסה שוב.</div>';
+      btn.disabled = false;
+      btn.textContent = 'הצטרף לתור';
+    }
+  });
+
+  function addMinutes(time, mins) {
+    const [h, m] = time.split(':').map(Number);
+    const total = h * 60 + m + mins;
+    return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+  }
+
+  function formatDateHe(str) {
+    const d = new Date(str + 'T12:00:00');
+    return d.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+
+  function copyTrackLink() {
+    if (trackUrl) navigator.clipboard.writeText(trackUrl).then(() => toast('לינק הועתק!', 'success'));
+  }
+
+  function toast(msg, type = 'success') {
+    const c = document.getElementById('toastContainer');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    c.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  function esc(str) { if (!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;'); }
+
+  async function logout() { await fetch('/api/auth/logout', { method: 'POST' }); window.location.href = '/'; }
+
+  init();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskLine – ניהול תור משימות</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Personal Widget ── */
+    .personal-widget {
+      max-width: 900px;
+      margin: 0 auto 3rem;
+      padding: 0 1.5rem;
+    }
+
+    .widget-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .widget-header {
+      padding: 1.25rem 1.75rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(135deg, rgba(124,106,247,0.06) 0%, transparent 100%);
+    }
+
+    .widget-greeting {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .widget-role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-glow);
+      border: 1px solid rgba(124,106,247,0.3);
+      border-radius: 999px;
+      padding: 0.25rem 0.8rem;
+      font-size: 0.78rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .widget-body { padding: 1.5rem 1.75rem; }
+
+    /* Provider widget */
+    .provider-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .pstat {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      text-align: center;
+    }
+    .pstat-value { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+    .pstat-label { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.3rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .next-task-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .next-task-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.3rem; }
+    .next-task-name { font-weight: 600; }
+    .next-task-title { font-size: 0.85rem; color: var(--text-muted); }
+
+    /* Requester widget */
+    .req-task-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.85rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .req-task-row:last-child { border-bottom: none; }
+
+    .req-pos-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1rem;
+      flex-shrink: 0;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 2px solid var(--accent);
+    }
+    .req-pos-badge.ip { background: var(--blue-bg); color: var(--blue); border-color: var(--blue); }
+
+    /* Nav */
+    .main-nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .nav-link {
+      padding: 0.4rem 0.9rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .nav-link:hover { color: var(--text); background: var(--surface2); }
+    .nav-link.active { color: var(--text); background: var(--surface2); }
+
+    .nav-account {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .account-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.9rem;
+      font-size: 0.85rem;
+      color: var(--text);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .account-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .account-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── ניווט עליון ─── -->
+<nav class="main-nav">
+  <div style="display:flex; align-items:center; gap:2rem">
+    <div class="navbar-brand" style="font-size:1.2rem; font-weight:700; display:flex; align-items:center; gap:0.5rem">
+      <span style="width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent);display:inline-block"></span>
+      TaskLine
+    </div>
+    <div class="nav-links">
+      <a href="/" class="nav-link active">🏠 ראשי</a>
+      <a href="guest.html" class="nav-link">📋 שלח בקשה</a>
+    </div>
+  </div>
+
+  <div class="nav-account" id="navAccount">
+    <!-- מתמלא ב-JS -->
+  </div>
+</nav>
+
+<!-- ─── ווידג'ט אישי (מוצג כשמחוברים) ─── -->
+<div class="personal-widget" id="personalWidget" style="display:none; margin-top:2rem">
+  <div class="widget-card" id="widgetCard">
+    <!-- מתמלא ב-JS -->
+  </div>
+</div>
+
+<!-- ─── Hero (מוצג תמיד) ─── -->
+<main class="hero" id="heroSection" style="min-height: auto; padding: 3rem 2rem 4rem">
+  <div class="hero-badge">✦ ניהול תור משימות פנימי</div>
+
+  <h1>
+    הפסיקו לרדוף.<br />
+    <span class="gradient-text">נהלו את התור.</span>
+  </h1>
+
+  <p>
+    TaskLine נותנת לצוות שלכם תור שקוף והוגן.
+    מבקשים יודעים איפה הם עומדים. נותני שירות נשארים ממוקדים.
+  </p>
+
+  <div class="hero-cta" id="heroCta">
+    <a href="register.html" class="btn btn-primary btn-lg">הצטרפו עכשיו</a>
+    <a href="guest.html" class="btn btn-ghost btn-lg">שלח בקשה ללא הרשמה</a>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <h3>תור שקוף</h3>
+      <p>כולם רואים את מיקומם. לא עוד "איפה אני?"</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🗓️</div>
+      <h3>סלוטים לפגישות</h3>
+      <p>הזמינו פגישה בזמן נוח לשני הצדדים.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔗</div>
+      <h3>ללא הרשמה</h3>
+      <p>שלחו בקשה דרך לינק. מעקב עם טוקן.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🛡️</div>
+      <h3>פרטיות קודמת</h3>
+      <p>מבקשים רואים מספר בלבד, לא שמות.</p>
+    </div>
+  </div>
+</main>
+
+<script>
+  async function init() {
+    const res = await fetch('/api/auth/me');
+    const me = await res.json();
+
+    const navAccount = document.getElementById('navAccount');
+
+    if (me.loggedIn) {
+      // ── ניווט: כפתור חשבון ──
+      const dashUrl = me.role === 'provider' ? '/provider-dashboard.html' : '/requester-dashboard.html';
+      navAccount.innerHTML = `
+        <a href="${dashUrl}" class="account-btn">
+          <div class="account-avatar">${me.name[0]}</div>
+          <span>${me.name}</span>
+        </a>
+        <a href="/profile.html" class="btn btn-ghost btn-sm">⚙️ הגדרות</a>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">יציאה</button>
+      `;
+
+      // ── CTA: עדכן להשאיר רלוונטי ──
+      document.getElementById('heroCta').innerHTML = `
+        <a href="${dashUrl}" class="btn btn-primary btn-lg">לדשבורד שלי</a>
+        <a href="guest.html" class="btn btn-ghost btn-lg">שלח בקשה חדשה</a>
+      `;
+
+      // ── ווידג'ט אישי ──
+      loadWidget(me);
+    } else {
+      navAccount.innerHTML = `
+        <a href="login.html" class="btn btn-ghost btn-sm">כניסה</a>
+        <a href="register.html" class="btn btn-primary btn-sm">הרשמה</a>
+      `;
+    }
+  }
+
+  async function loadWidget(me) {
+    try {
+      const res = await fetch('/api/dashboard-summary');
+      if (!res.ok) return;
+      const data = await res.json();
+
+      document.getElementById('personalWidget').style.display = 'block';
+      const card = document.getElementById('widgetCard');
+      const dashUrl = me.role === 'provider' ? '/provider-dashboard.html' : '/requester-dashboard.html';
+
+      if (data.role === 'provider') {
+        const serviceLabel = me.service_type || '';
+        card.innerHTML = `
+          <div class="widget-header">
+            <div>
+              <div class="widget-greeting">שלום, ${esc(me.name)} 👋</div>
+              <div style="font-size:0.82rem; color:var(--text-muted); margin-top:0.2rem">${esc(serviceLabel)}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.75rem">
+              <span class="widget-role-badge">🛠️ נותן שירות</span>
+              <a href="${dashUrl}" class="btn btn-primary btn-sm">ניהול תור ←</a>
+            </div>
+          </div>
+          <div class="widget-body">
+            <div class="provider-stats">
+              <div class="pstat">
+                <div class="pstat-value">${data.waiting}</div>
+                <div class="pstat-label">ממתינים</div>
+              </div>
+              <div class="pstat">
+                <div class="pstat-value" style="color:var(--blue)">${data.inProgress}</div>
+                <div class="pstat-label">בטיפול</div>
+              </div>
+              <div class="pstat">
+                <div class="pstat-value" style="color:var(--green)">${data.doneToday}</div>
+                <div class="pstat-label">טופלו היום</div>
+              </div>
+            </div>
+            ${data.nextTask ? `
+              <div class="next-task-box">
+                <div style="flex:1">
+                  <div class="next-task-label">הבא בתור</div>
+                  <div class="next-task-name">${esc(data.nextTask.requester_name)}</div>
+                  <div class="next-task-title">${esc(data.nextTask.title)}</div>
+                </div>
+                <a href="${dashUrl}" class="btn btn-primary btn-sm">התחל ←</a>
+              </div>
+            ` : `
+              <div style="text-align:center; padding:1rem; color:var(--text-dim); font-size:0.9rem">
+                ✨ התור ריק — שתפו את הלינק שלכם
+              </div>
+            `}
+            <div style="margin-top:0.5rem">
+              <button onclick="copyQueueLink('${me.username}')" class="btn btn-ghost btn-sm">📋 העתק לינק תור</button>
+            </div>
+          </div>
+        `;
+      } else {
+        // Requester widget
+        let tasksHtml = '';
+        if (data.tasks && data.tasks.length > 0) {
+          data.tasks.forEach(t => {
+            const isIP = t.status === 'in_progress';
+            tasksHtml += `
+              <div class="req-task-row">
+                <div class="req-pos-badge ${isIP ? 'ip' : ''}">${isIP ? '⚡' : t.position}</div>
+                <div style="flex:1; min-width:0">
+                  <div style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${esc(t.title)}</div>
+                  <div style="font-size:0.82rem; color:var(--text-muted)">${esc(t.provider_name)} · ${esc(t.service_type)}</div>
+                </div>
+                <span class="badge badge-${t.status}">${formatStatus(t.status)}</span>
+                ${t.token ? `<a href="/track.html?token=${t.token}" class="btn btn-ghost btn-sm">מעקב</a>` : ''}
+              </div>`;
+          });
+        } else {
+          tasksHtml = `<div style="text-align:center; padding:1.5rem; color:var(--text-dim); font-size:0.9rem">📭 אין בקשות פעילות</div>`;
+        }
+
+        card.innerHTML = `
+          <div class="widget-header">
+            <div>
+              <div class="widget-greeting">שלום, ${esc(me.name)} 👋</div>
+              <div style="font-size:0.82rem; color:var(--text-muted); margin-top:0.2rem">${data.active} בקשות פעילות</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.75rem">
+              <span class="widget-role-badge">📋 מבקש שירות</span>
+              <a href="${dashUrl}" class="btn btn-primary btn-sm">כל הבקשות ←</a>
+            </div>
+          </div>
+          <div class="widget-body">
+            ${tasksHtml}
+            <div style="margin-top:1rem">
+              <a href="guest.html" class="btn btn-ghost btn-sm">+ בקשה חדשה</a>
+            </div>
+          </div>
+        `;
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  function copyQueueLink(username) {
+    const url = `${window.location.origin}/queue.html?provider=${username}`;
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = event.target;
+      btn.textContent = '✓ הועתק!';
+      setTimeout(() => btn.textContent = '📋 העתק לינק תור', 2000);
+    });
+  }
+
+  function formatStatus(s) {
+    return { waiting: 'ממתין', in_progress: 'בטיפול', done: 'טופל' }[s] || s;
+  }
+
+  function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.reload();
+  }
+
+  init();
+</script>
+
+</body>
+</html>

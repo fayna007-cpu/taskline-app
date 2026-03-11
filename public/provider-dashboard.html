@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ניהול תור – TaskLine</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* Tabs */
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+    .tab-btn {
+      padding: 0.7rem 1.4rem;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Queue link box */
+    .queue-link-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.65rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .queue-link-box span {
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: var(--accent);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Task items */
+    .in-progress-banner {
+      background: rgba(59,130,246,0.08);
+      border: 1px solid var(--blue);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.2rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .pulse-dot {
+      width: 10px; height: 10px;
+      background: var(--blue);
+      border-radius: 50%;
+      flex-shrink: 0;
+      animation: ripple 1.5s infinite;
+    }
+    @keyframes ripple {
+      0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
+      70% { box-shadow: 0 0 0 8px rgba(59,130,246,0); }
+      100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+    }
+
+    /* Slot picker */
+    .slot-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    .slot-chip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.4rem;
+      text-align: center;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .slot-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .slot-chip.selected { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+    .slot-chip.booked { background: var(--green-bg); border-color: var(--green); color: var(--green); cursor: default; font-size: 0.78rem; }
+
+    .slot-date-row {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+    .slot-date-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    .slot-date-label { font-weight: 600; font-size: 0.9rem; }
+    .slot-count { font-size: 0.78rem; color: var(--text-muted); }
+
+    .add-slots-form {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .done-section { margin-top: 2rem; opacity: 0.7; }
+  </style>
+</head>
+<body>
+
+<!-- ─── ניווט ─── -->
+<nav class="main-nav" style="background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100">
+  <div style="display:flex;align-items:center;gap:2rem">
+    <a href="/" style="text-decoration:none;font-size:1.2rem;font-weight:700;color:var(--text);display:flex;align-items:center;gap:0.5rem">
+      <span style="width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent);display:inline-block"></span>
+      TaskLine
+    </a>
+    <div style="display:flex;gap:0.25rem">
+      <a href="/" style="padding:0.4rem 0.9rem;border-radius:6px;font-size:0.88rem;color:var(--text-muted);text-decoration:none">🏠 ראשי</a>
+      <a href="/provider-dashboard.html" style="padding:0.4rem 0.9rem;border-radius:6px;font-size:0.88rem;color:var(--text);background:var(--surface2);text-decoration:none">🛠️ ניהול תור</a>
+      <a href="/profile.html" style="padding:0.4rem 0.9rem;border-radius:6px;font-size:0.88rem;color:var(--text-muted);text-decoration:none">⚙️ הגדרות</a>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:0.75rem">
+    <div style="display:flex;align-items:center;gap:0.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.9rem;font-size:0.85rem">
+      <div id="navAvatar" style="width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white"></div>
+      <span id="navUser"></span>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">יציאה</button>
+  </div>
+</nav>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<main class="page-wrapper">
+
+  <!-- כותרת -->
+  <div class="dash-header">
+    <div>
+      <h1 class="dash-title" id="dashTitle">התור שלי</h1>
+      <p class="dash-subtitle" id="dashSubtitle"></p>
+    </div>
+    <div>
+      <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.3rem">לינק התור שלך:</div>
+      <div class="queue-link-box">
+        <span id="queueLinkText"></span>
+        <button class="btn btn-ghost btn-sm" onclick="copyQueueLink()">העתק</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- סטטיסטיקות -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value" id="statWaiting">–</div>
+      <div class="stat-label">ממתינים</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--blue)" id="statInProgress">–</div>
+      <div class="stat-label">בטיפול</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--green)" id="statDone">–</div>
+      <div class="stat-label">טופלו היום</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--accent)" id="statSlots">–</div>
+      <div class="stat-label">סלוטים פנויים</div>
+    </div>
+  </div>
+
+  <!-- טאבים -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('queue')">📋 תור פעיל</button>
+    <button class="tab-btn" onclick="showTab('slots')">🗓️ ניהול סלוטים</button>
+  </div>
+
+  <!-- תוכן: תור פעיל -->
+  <div class="tab-content active" id="tab-queue">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">תור פעיל</span>
+        <button class="btn btn-ghost btn-sm" onclick="loadQueue()">↻ רענן</button>
+      </div>
+      <div id="queueList">
+        <div class="empty-state"><div class="empty-icon">⏳</div><p>טוען תור...</p></div>
+      </div>
+    </div>
+
+    <div class="done-section" id="doneSection" style="display:none">
+      <div class="section-title">טופלו לאחרונה</div>
+      <div id="doneList"></div>
+    </div>
+  </div>
+
+  <!-- תוכן: ניהול סלוטים -->
+  <div class="tab-content" id="tab-slots">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">הוסף סלוטים זמינים</span>
+      </div>
+
+      <div class="add-slots-form">
+        <div class="form-row" style="margin-bottom:1rem">
+          <div class="form-group" style="margin-bottom:0">
+            <label>תאריך</label>
+            <input type="date" id="slotDate" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>משך (דקות)</label>
+            <select id="slotDuration">
+              <option value="30">30 דקות</option>
+              <option value="45">45 דקות</option>
+              <option value="60" selected>שעה</option>
+              <option value="90">שעה וחצי</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>בחר שעות זמינות</label>
+          <div class="slot-grid" id="timePickerGrid">
+            <!-- נוצר ב-JS -->
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem">
+          <span style="font-size:0.82rem;color:var(--text-muted)" id="selectedCount">לא נבחרו שעות</span>
+          <button class="btn btn-primary" onclick="saveSlots()" id="saveSlotsBtn" disabled>שמור סלוטים</button>
+        </div>
+      </div>
+
+      <div id="slotsList">
+        <div class="empty-state"><div class="empty-icon">📅</div><p>טוען סלוטים...</p></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- מודל פרטי משימה -->
+<div id="taskModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;padding:1rem;">
+  <div class="card" style="max-width:480px;width:100%;max-height:80vh;overflow-y:auto;">
+    <div class="card-header">
+      <span class="card-title" id="modalTitle">פרטי משימה</span>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+  let currentUser = null;
+  let queueData = null;
+  let selectedTimes = new Set();
+
+  const HOURS = ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30',
+                 '12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30',
+                 '16:00','16:30','17:00','17:30','18:00'];
+
+  async function init() {
+    const res = await fetch('/api/auth/me');
+    const data = await res.json();
+
+    if (!data.loggedIn || data.role !== 'provider') {
+      window.location.href = '/login.html';
+      return;
+    }
+
+    currentUser = data;
+    document.getElementById('navUser').textContent = data.name;
+    document.getElementById('navAvatar').textContent = data.name[0];
+    document.getElementById('dashTitle').textContent = `${data.service_type || 'התור שלי'}`;
+    document.getElementById('dashSubtitle').textContent = `שלום ${data.name} — ניהול בקשות נכנסות`;
+
+    const queueUrl = `${window.location.origin}/queue.html?provider=${data.username}`;
+    document.getElementById('queueLinkText').textContent = queueUrl;
+
+    buildTimePicker();
+    setDefaultDate();
+    loadQueue();
+    loadSlots();
+
+    setInterval(() => {
+      if (document.getElementById('tab-queue').classList.contains('active')) loadQueue();
+    }, 15000);
+  }
+
+  // ─── Time Picker ───────────────────────────────────────────────────────
+  function buildTimePicker() {
+    const grid = document.getElementById('timePickerGrid');
+    grid.innerHTML = HOURS.map(h => `
+      <div class="slot-chip" data-time="${h}" onclick="toggleTime('${h}')">${h}</div>
+    `).join('');
+  }
+
+  function setDefaultDate() {
+    const today = new Date();
+    today.setDate(today.getDate() + 1);
+    document.getElementById('slotDate').value = today.toISOString().split('T')[0];
+    document.getElementById('slotDate').min = new Date().toISOString().split('T')[0];
+  }
+
+  function toggleTime(time) {
+    if (selectedTimes.has(time)) {
+      selectedTimes.delete(time);
+    } else {
+      selectedTimes.add(time);
+    }
+    document.querySelectorAll('.slot-chip').forEach(el => {
+      if (el.dataset.time) {
+        el.classList.toggle('selected', selectedTimes.has(el.dataset.time));
+      }
+    });
+    const count = selectedTimes.size;
+    document.getElementById('selectedCount').textContent = count === 0 ? 'לא נבחרו שעות' : `${count} שעות נבחרו`;
+    document.getElementById('saveSlotsBtn').disabled = count === 0;
+  }
+
+  async function saveSlots() {
+    const date = document.getElementById('slotDate').value;
+    const duration = parseInt(document.getElementById('slotDuration').value);
+
+    if (!date || selectedTimes.size === 0) return;
+
+    const btn = document.getElementById('saveSlotsBtn');
+    btn.disabled = true;
+    btn.textContent = 'שומר...';
+
+    try {
+      const res = await fetch('/api/slots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, times: [...selectedTimes].sort(), duration })
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        toast(`${data.created.length} סלוטים נשמרו!`, 'success');
+        selectedTimes.clear();
+        buildTimePicker();
+        document.getElementById('selectedCount').textContent = 'לא נבחרו שעות';
+        loadSlots();
+      } else {
+        toast(data.error, 'error');
+      }
+    } catch {
+      toast('שגיאת רשת', 'error');
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'שמור סלוטים';
+  }
+
+  async function loadSlots() {
+    try {
+      const res = await fetch('/api/slots');
+      const slots = await res.json();
+      renderSlots(slots);
+      document.getElementById('statSlots').textContent = slots.filter(s => !s.is_booked).length;
+    } catch(e) { console.error(e); }
+  }
+
+  function renderSlots(slots) {
+    const container = document.getElementById('slotsList');
+
+    if (!slots.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><p>אין סלוטים מוגדרים. הוסיפו זמינות למעלה.</p></div>`;
+      return;
+    }
+
+    // Group by date
+    const byDate = {};
+    slots.forEach(s => {
+      if (!byDate[s.date]) byDate[s.date] = [];
+      byDate[s.date].push(s);
+    });
+
+    let html = '';
+    Object.entries(byDate).sort().forEach(([date, daySlots]) => {
+      const freeCount = daySlots.filter(s => !s.is_booked).length;
+      html += `
+        <div class="slot-date-row">
+          <div class="slot-date-header">
+            <div class="slot-date-label">${formatDateHe(date)}</div>
+            <div class="slot-count">${freeCount} פנויים מתוך ${daySlots.length}</div>
+          </div>
+          <div class="slot-grid">
+            ${daySlots.map(s => s.is_booked
+              ? `<div class="slot-chip booked" title="${esc(s.requester_name || '')} – ${esc(s.task_title || '')}">✓ ${s.time}</div>`
+              : `<div class="slot-chip" style="position:relative">
+                  ${s.time}
+                  <span onclick="deleteSlot(${s.id})" title="מחק" style="position:absolute;top:2px;left:4px;font-size:0.65rem;color:var(--text-dim);cursor:pointer">✕</span>
+                </div>`
+            ).join('')}
+          </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+  }
+
+  async function deleteSlot(id) {
+    const res = await fetch(`/api/slots/${id}`, { method: 'DELETE' });
+    if (res.ok) { toast('סלוט נמחק', 'success'); loadSlots(); }
+  }
+
+  // ─── Queue ─────────────────────────────────────────────────────────────
+  async function loadQueue() {
+    try {
+      const res = await fetch('/api/queue/provider');
+      if (!res.ok) return;
+      queueData = await res.json();
+      renderQueue(queueData);
+    } catch(e) { console.error(e); }
+  }
+
+  function renderQueue({ active, done }) {
+    const inProgress = active.filter(t => t.status === 'in_progress');
+    const waiting = active.filter(t => t.status === 'waiting');
+
+    document.getElementById('statWaiting').textContent = waiting.length;
+    document.getElementById('statInProgress').textContent = inProgress.length;
+    document.getElementById('statDone').textContent = done.length;
+
+    const list = document.getElementById('queueList');
+
+    if (active.length === 0) {
+      list.innerHTML = `<div class="empty-state"><div class="empty-icon">✨</div><p>התור ריק — שתפו את הלינק שלכם!</p></div>`;
+      return;
+    }
+
+    let html = '';
+
+    inProgress.forEach(task => {
+      const slotTag = task.slot_date ? `<span style="font-size:0.75rem;color:var(--blue)">🗓️ ${task.slot_date} ${task.slot_time}</span>` : '';
+      html += `
+        <div class="in-progress-banner">
+          <div class="pulse-dot"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600">${esc(task.requester_name)}</div>
+            <div style="font-size:0.85rem;color:var(--text-muted)">${esc(task.title)}</div>
+            ${slotTag}
+          </div>
+          <span class="badge badge-in_progress">בטיפול</span>
+          <div style="display:flex;gap:0.5rem">
+            <button class="btn btn-success btn-sm" onclick="markDone(${task.id})">סיום</button>
+            <button class="btn btn-ghost btn-sm" onclick="showTask(${task.id})">פרטים</button>
+          </div>
+        </div>`;
+    });
+
+    waiting.forEach(task => {
+      const slotTag = task.slot_date ? `<span style="font-size:0.72rem;color:var(--accent)">🗓️ ${task.slot_date} ${task.slot_time}</span>` : '';
+      html += `
+        <div class="task-item">
+          <div class="task-number">#${task.queue_position}</div>
+          <div class="task-info">
+            <div class="task-name">${esc(task.requester_name)}</div>
+            <div class="task-title">${esc(task.title)} ${slotTag}</div>
+          </div>
+          <span class="badge badge-waiting">ממתין</span>
+          <div class="task-actions">
+            <button class="btn btn-primary btn-sm" onclick="startTask(${task.id})">התחל</button>
+            <button class="btn btn-warning btn-sm" onclick="skipTask(${task.id})">דחה</button>
+            <button class="btn btn-ghost btn-sm" onclick="showTask(${task.id})">⋯</button>
+          </div>
+        </div>`;
+    });
+
+    list.innerHTML = html;
+
+    if (done.length > 0) {
+      document.getElementById('doneSection').style.display = 'block';
+      document.getElementById('doneList').innerHTML = done.map(task => `
+        <div class="task-item" style="opacity:0.5">
+          <div class="task-number">✓</div>
+          <div class="task-info">
+            <div class="task-name">${esc(task.requester_name)}</div>
+            <div class="task-title">${esc(task.title)}</div>
+          </div>
+          <span class="badge badge-done">טופל</span>
+        </div>`).join('');
+    }
+  }
+
+  async function startTask(id) { await apiAction(`/api/queue/start/${id}`, 'הטיפול החל!'); }
+  async function markDone(id) { await apiAction(`/api/queue/done/${id}`, 'המשימה הושלמה!'); }
+  async function skipTask(id) { await apiAction(`/api/queue/skip/${id}`, 'הועבר לסוף התור.'); }
+
+  async function apiAction(url, msg) {
+    const res = await fetch(url, { method: 'POST' });
+    if (res.ok) { toast(msg, 'success'); loadQueue(); }
+    else { const d = await res.json(); toast(d.error || 'שגיאה', 'error'); }
+  }
+
+  function showTask(id) {
+    const all = [...(queueData?.active || []), ...(queueData?.done || [])];
+    const task = all.find(t => t.id === id);
+    if (!task) return;
+
+    document.getElementById('modalTitle').textContent = task.title;
+    document.getElementById('modalBody').innerHTML = `
+      <div class="detail-row"><span class="detail-label">מבקש</span><span class="detail-value">${esc(task.requester_name)}</span></div>
+      <div class="detail-row"><span class="detail-label">סטטוס</span><span class="detail-value"><span class="badge badge-${task.status}">${formatStatus(task.status)}</span></span></div>
+      <div class="detail-row"><span class="detail-label">מיקום</span><span class="detail-value">#${task.queue_position || '–'}</span></div>
+      ${task.slot_date ? `<div class="detail-row"><span class="detail-label">פגישה מתוזמנת</span><span class="detail-value">🗓️ ${task.slot_date} בשעה ${task.slot_time} (${task.slot_duration} דק')</span></div>` : ''}
+      <div class="detail-row"><span class="detail-label">נשלח</span><span class="detail-value">${formatDate(task.created_at)}</span></div>
+      ${task.description ? `<div style="margin-top:1.2rem"><div class="section-title">תיאור</div><p style="font-size:0.9rem;color:var(--text-muted);margin-top:0.4rem;line-height:1.6">${esc(task.description)}</p></div>` : ''}
+      <div style="margin-top:1.5rem;display:flex;gap:0.75rem;flex-wrap:wrap">
+        ${task.status === 'waiting' ? `<button class="btn btn-primary" onclick="startTask(${task.id});closeModal()">התחל טיפול</button>` : ''}
+        ${task.status === 'in_progress' ? `<button class="btn btn-success" onclick="markDone(${task.id});closeModal()">סמן כטופל</button>` : ''}
+        <button class="btn btn-ghost" onclick="closeModal()">סגור</button>
+      </div>
+    `;
+    document.getElementById('taskModal').style.display = 'flex';
+  }
+
+  function closeModal() { document.getElementById('taskModal').style.display = 'none'; }
+
+  function showTab(name) {
+    document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', ['queue','slots'][i] === name));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(`tab-${name}`).classList.add('active');
+    if (name === 'slots') loadSlots();
+  }
+
+  function copyQueueLink() {
+    const url = `${window.location.origin}/queue.html?provider=${currentUser.username}`;
+    navigator.clipboard.writeText(url).then(() => toast('לינק הועתק!', 'success'));
+  }
+
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/';
+  }
+
+  function formatStatus(s) { return { waiting: 'ממתין', in_progress: 'בטיפול', done: 'טופל' }[s] || s; }
+  function formatDate(str) { if (!str) return '–'; return new Date(str).toLocaleString('he-IL', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+  function formatDateHe(str) {
+    const d = new Date(str + 'T12:00:00');
+    return d.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+  function esc(str) { if (!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function toast(msg, type = 'success') {
+    const c = document.getElementById('toastContainer');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    c.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  document.getElementById('taskModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+
+  init();
+</script>
+
+</body>
+</html>
